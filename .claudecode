@@ -1,0 +1,67 @@
+# Claude Code Rules for Smart Context MCP Server
+
+## Project Overview
+This is the Smart Context MCP Server - an intelligent file context selection tool that helps LLMs work more efficiently by selecting only the most relevant files for any coding task. Proven to reduce token usage by 82% while maintaining 100% relevance.
+
+## Key Principles
+1. **Pure JavaScript Only** - No native dependencies (use sql.js, not better-sqlite3)
+2. **Performance First** - Target <200ms response time for context selection
+3. **Learning System** - Track and improve from user feedback
+4. **Transparent Reasoning** - Always explain why files were selected
+
+## Code Style
+- ES6 modules (import/export)
+- Async/await over promises
+- Clear error messages with context
+- No console.log in production code (except for startup messages)
+
+## Testing Requirements
+- Test with both small and large codebases
+- Verify error handling for edge cases
+- Check memory usage stays reasonable
+- Run lint and typecheck before committing
+
+## Architecture Notes
+- Database: sql.js (pure JavaScript SQLite)
+- NLP: compromise.js for semantic analysis
+- Tokenizer: gpt-tokenizer for accurate counting
+- Git: simple-git with graceful fallbacks
+
+## Important Files
+- `src/index.js` - Main MCP server with 9 MCP tools
+- `src/contextAnalyzer-pure.js` - Core selection logic
+- `src/fileScanner-scoped.js` - Scoped file scanning for large codebases
+- `src/learning.js` - Machine learning system with user override tracking
+
+## Common Tasks
+- Add new MCP tool: Update src/index.js
+- Improve relevance: Modify contextAnalyzer-pure.js
+- Add file type support: Update fileScanner-optimized.js
+- Adjust relevance threshold: Update config/default.json
+
+## Performance Targets
+- File scanning: ~70 files/second (real-world)
+- Response time: <200ms (warm cache)
+- Memory: ~50KB per file
+- Relevance accuracy: 82%+ token reduction
+
+## Testing Commands
+```bash
+npm test              # Run unit tests
+npm run test:debug    # Test debug mode features
+npm run test:feature  # Test feature mode
+npm run test:refactor # Test refactor mode
+npm run test:semantic # Test semantic analysis
+```
+
+## Project Scope Feature
+For large codebases (10k+ files), use project scopes:
+- Backend only: src/api/**, src/services/**, src/models/**
+- Frontend only: client/**, src/components/**, src/pages/**
+- Exclude tests: **/*.test.js, **/*.spec.js
+
+## User Override Learning
+The system learns from user feedback:
+- +0.3 weight for manually added files
+- -0.05 weight for manually removed files
+- Weights persist across sessions

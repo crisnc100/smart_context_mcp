@@ -1,0 +1,35 @@
+{
+  "name": "smart-context-pruning",
+  "version": "1.0.0",
+  "description": "Intelligent MCP server for context selection with LLM feedback integration",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "context",
+    "llm",
+    "ai",
+    "smart-pruning"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "sql.js": "^1.8.0",
+    "gpt-tokenizer": "^2.1.2",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
+    "ignore": "^5.3.0",
+    "simple-git": "^3.21.0",
+    "compromise": "^14.13.0",
+    "stopword": "^2.0.8",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

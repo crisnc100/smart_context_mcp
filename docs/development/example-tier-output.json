@@ -1,0 +1,109 @@
+{
+  "comment": "Example output with the new tier-based system and user controls",
+  "sessionId": 123,
+  "taskMode": "debug",
+  "queryInterpretation": {
+    "intent": ["fix", "error", "authentication", "session"],
+    "concepts": ["auth", "session", "expire", "error"],
+    "entities": ["authentication", "session"]
+  },
+  "included": [
+    {
+      "path": "src/auth/authService.js",
+      "tier": "essential",
+      "reasoning": [
+        "Contains validateSession and sessionExpired logic",
+        "Modified 2 hours ago (recent change)",
+        "Direct import from current file",
+        "Previously marked helpful 3 times"
+      ],
+      "primaryReason": "Contains validateSession and sessionExpired logic",
+      "tokens": 1250,
+      "debug": {
+        "relevanceScore": 0.92,
+        "confidence": 0.85
+      }
+    },
+    {
+      "path": "src/auth/authErrors.js",
+      "tier": "essential",
+      "reasoning": [
+        "Defines SessionExpiredError class",
+        "Frequently edited with authService.js",
+        "Direct dependency"
+      ],
+      "primaryReason": "Defines SessionExpiredError class",
+      "tokens": 320,
+      "debug": {
+        "relevanceScore": 0.88,
+        "confidence": 0.90
+      }
+    },
+    {
+      "path": "src/middleware/authMiddleware.js",
+      "tier": "recommended",
+      "reasoning": [
+        "Handles authentication errors",
+        "Contains session validation logic",
+        "Git history shows related changes"
+      ],
+      "primaryReason": "Handles authentication errors",
+      "tokens": 890,
+      "debug": {
+        "relevanceScore": 0.75,
+        "confidence": 0.70
+      }
+    },
+    {
+      "path": "src/config/auth.config.js",
+      "tier": "recommended",
+      "reasoning": [
+        "Contains session timeout configuration",
+        "Referenced by authService.js"
+      ],
+      "primaryReason": "Contains session timeout configuration",
+      "tokens": 200,
+      "debug": {
+        "relevanceScore": 0.55,
+        "confidence": 0.60
+      }
+    },
+    {
+      "path": "tests/auth/authService.test.js",
+      "tier": "optional",
+      "reasoning": [
+        "Test file for auth service",
+        "May contain relevant test cases",
+        "Lower priority for debugging"
+      ],
+      "primaryReason": "Test file for auth service",
+      "tokens": 1100,
+      "debug": {
+        "relevanceScore": 0.45,
+        "confidence": 0.50
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "path": "src/utils/logger.js",
+      "tier": "excluded",
+      "reasoning": ["Below relevance threshold", "No auth-specific logic"],
+      "debug": {
+        "score": 0.25
+      }
+    }
+  ],
+  "totalTokens": 3760,
+  "tokenBudget": 4000,
+  "suggestions": [
+    "Consider including auth.test.js for test coverage",
+    "authController.js has high co-change frequency with authService.js"
+  ],
+  "userControls": {
+    "minRelevanceScore": 0.3,
+    "canAdjustThreshold": true,
+    "currentLevel": 1,
+    "availableLevels": [1, 2, 3]
+  }
+}

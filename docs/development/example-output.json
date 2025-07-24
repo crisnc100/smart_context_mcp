@@ -1,0 +1,90 @@
+{
+  "sessionId": 42,
+  "taskMode": "debug",
+  "queryInterpretation": {
+    "intent": ["fix", "error", "authentication"],
+    "concepts": ["auth", "session", "expire"],
+    "entities": ["authentication", "session"]
+  },
+  "included": [
+    {
+      "path": "src/auth/authService.js",
+      "relevance": 0.92,
+      "reason": "Primary auth logic, recent changes, semantic match 'authentication'",
+      "tokens": 1250,
+      "confidence": 0.85,
+      "details": {
+        "semanticScore": 0.88,
+        "gitScore": 0.95,
+        "importScore": 0.90,
+        "userOverrideBonus": 0.15,
+        "reasons": [
+          "Contains 'validateSession' and 'createSession' functions",
+          "Modified 2 hours ago",
+          "Imported by authController.js (current file)",
+          "Previously marked helpful for similar auth tasks (3 times)"
+        ]
+      }
+    },
+    {
+      "path": "src/auth/authErrors.js",
+      "relevance": 0.88,
+      "reason": "Error definitions, imported by authService",
+      "tokens": 320,
+      "confidence": 0.90,
+      "details": {
+        "semanticScore": 0.82,
+        "gitScore": 0.85,
+        "importScore": 0.95,
+        "userOverrideBonus": 0.0,
+        "reasons": [
+          "Defines SessionExpiredError class",
+          "Co-changed with authService.js 8 times",
+          "Direct import relationship"
+        ]
+      }
+    },
+    {
+      "path": "src/middleware/authMiddleware.js",
+      "relevance": 0.75,
+      "reason": "Handles auth errors, recent issues reported here",
+      "tokens": 890,
+      "confidence": 0.70,
+      "details": {
+        "semanticScore": 0.72,
+        "gitScore": 0.80,
+        "importScore": 0.70,
+        "userOverrideBonus": -0.05,
+        "reasons": [
+          "Contains error handling for expired sessions",
+          "Git blame shows recent auth-related changes",
+          "Previously removed by user once (low confidence)"
+        ]
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "path": "src/utils/logger.js",
+      "score": 0.25,
+      "reasons": ["Low semantic match", "No recent changes", "Generic utility"]
+    },
+    {
+      "path": "src/models/user.js",
+      "score": 0.28,
+      "reasons": ["Below confidence threshold (0.3)", "No direct auth logic"]
+    }
+  ],
+  "totalTokens": 2460,
+  "tokenBudget": 4000,
+  "suggestions": [
+    "Consider expanding context (level 2) for related test files",
+    "auth.test.js has high co-change frequency with authService.js"
+  ],
+  "userControls": {
+    "canExpand": true,
+    "currentLevel": 1,
+    "nextLevelWouldAdd": 3,
+    "confidenceThreshold": 0.3
+  }
+}
