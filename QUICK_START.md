@@ -4,7 +4,7 @@
 
 ### 1. Install
 ```bash
-npm install @smart-context/mcp-server
+npm install @crisnc100/smart-context-mcp
 ```
 
 ### 2. Configure Claude Desktop
@@ -32,7 +32,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "smart-context": {
       "command": "node",
-      "args": ["/path/to/node_modules/@smart-context/mcp-server/src/index.js"],
+      "args": ["/path/to/node_modules/@crisnc100/smart-context-mcp/src/index.js"],
       "env": {
         "PROJECT_ROOT": "/path/to/your/project"
       }
@@ -73,7 +73,7 @@ Claude: *Uses search_codebase to find notification patterns*
 
 ```bash
 # Install globally
-npm install -g @smart-context/mcp-server
+npm install -g @crisnc100/smart-context-mcp
 
 # Analyze your project
 smart-context analyze --project-root .

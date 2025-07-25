@@ -1,11 +1,11 @@
 {
-  "name": "@smart-context/mcp-server",
+  "name": "@crisnc100/smart-context-mcp",
   "version": "1.0.0",
   "description": "Intelligent MCP server for optimal file context selection in LLM coding tasks",
   "main": "src/index.js",
   "type": "module",
   "bin": {
-    "smart-context": "./bin/smart-context.js"
+    "smart-context": "bin/smart-context.js"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -17,8 +17,7 @@
     "test:error": "node test/test-error-handling.js",
     "version:patch": "node scripts/version.js patch",
     "version:minor": "node scripts/version.js minor",
-    "version:major": "node scripts/version.js major",
-    "prepublishOnly": "npm run test:all"
+    "version:major": "node scripts/version.js major"
   },
   "keywords": [
     "mcp",

@@ -7,7 +7,7 @@ The Smart Context MCP Server provides intelligent file context selection for LLM
 ## Installation
 
 ```bash
-npm install @smart-context/mcp-server
+npm install @crisnc100/smart-context-mcp
 ```
 
 ## Configuration
@@ -291,7 +291,7 @@ Add to `claude_desktop_config.json`:
 ### Programmatic Usage
 
 ```javascript
-import { ContextAnalyzer } from '@smart-context/mcp-server';
+import { ContextAnalyzer } from '@crisnc100/smart-context-mcp';
 
 const analyzer = new ContextAnalyzer('/path/to/project');
 

@@ -1,6 +1,6 @@
 # Smart Context MCP Server 🎯
 
-[![Version](https://img.shields.io/npm/v/@smart-context/mcp-server)](https://www.npmjs.com/package/@smart-context/mcp-server)
+[![Version](https://img.shields.io/npm/v/@crisnc100/smart-context-mcp)](https://www.npmjs.com/package/@crisnc100/smart-context-mcp)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io)
@@ -34,11 +34,10 @@ See [QUICK_START.md](./QUICK_START.md) for 5-minute setup instructions.
 
 ## Installation
 
-### Method 1: NPM Package (Recommended - Coming Soon)
+### Method 1: NPM Package (Recommended)
 
 ```bash
-# Once published to npm:
-npm install -g @smart-context/mcp-server
+npm install -g @crisnc100/smart-context-mcp
 ```
 
 ### Method 2: Direct from GitHub
@@ -70,13 +69,13 @@ npm start
 
 **IMPORTANT**: Smart Context needs to know WHERE your project files are located. You must set `PROJECT_ROOT` for each project.
 
-#### For NPM Installation (once published):
+#### For NPM Installation:
 ```json
 {
   "mcpServers": {
     "smart-context": {
       "command": "npx",
-      "args": ["@smart-context/mcp-server"],
+      "args": ["@crisnc100/smart-context-mcp"],
       "env": {
         "PROJECT_ROOT": "/path/to/your/project"
       }

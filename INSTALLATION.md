@@ -5,7 +5,7 @@
 ### Method 1: NPM Package (Recommended)
 
 ```bash
-npm install -g @smart-context/mcp-server
+npm install -g @crisnc100/smart-context-mcp
 ```
 
 ### Method 2: Direct from GitHub
@@ -35,7 +35,7 @@ npm install
      "mcpServers": {
        "smart-context": {
          "command": "npx",
-         "args": ["@smart-context/mcp-server"],
+         "args": ["@crisnc100/smart-context-mcp"],
          "env": {
            "PROJECT_ROOT": "C:\\Users\\YourName\\YourProject"
          }
@@ -89,7 +89,7 @@ npm install
      "mcpServers": {
        "smart-context": {
          "command": "npx",
-         "args": ["@smart-context/mcp-server"],
+         "args": ["@crisnc100/smart-context-mcp"],
          "env": {
            "PROJECT_ROOT": "/Users/YourName/YourProject"
          }
@@ -113,7 +113,7 @@ npm install
      "mcpServers": {
        "smart-context": {
          "command": "npx",
-         "args": ["@smart-context/mcp-server"],
+         "args": ["@crisnc100/smart-context-mcp"],
          "env": {
            "PROJECT_ROOT": "/home/YourName/YourProject"
          }
@@ -131,14 +131,14 @@ You can configure multiple projects by adding different server entries:
   "mcpServers": {
     "smart-context-project1": {
       "command": "npx",
-      "args": ["@smart-context/mcp-server"],
+      "args": ["@crisnc100/smart-context-mcp"],
       "env": {
         "PROJECT_ROOT": "C:\\Projects\\Project1"
       }
     },
     "smart-context-project2": {
       "command": "npx",
-      "args": ["@smart-context/mcp-server"],
+      "args": ["@crisnc100/smart-context-mcp"],
       "env": {
         "PROJECT_ROOT": "C:\\Projects\\Project2"
       }

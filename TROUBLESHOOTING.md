@@ -33,7 +33,7 @@ npm install
 **Solution**:
 ```bash
 # Option 1: Use npx instead of global install
-npx @smart-context/mcp-server
+npx @crisnc100/smart-context-mcp
 
 # Option 2: Fix npm permissions
 npm config set prefix ~/.npm-global
