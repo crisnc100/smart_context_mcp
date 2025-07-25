@@ -10,6 +10,9 @@ docs/
 *.md
 !README.md
 !CHANGELOG.md
+!LICENSE
+!INSTALLATION.md
+!QUICK_START.md
 
 # Build artifacts
 dist/

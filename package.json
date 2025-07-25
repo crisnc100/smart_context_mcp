@@ -33,7 +33,7 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "author": "Smart Context Team",
+  "author": "Cristian Ortega",
   "license": "MIT",
   "repository": {
     "type": "git",

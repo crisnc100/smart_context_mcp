@@ -1,4 +1,5 @@
 import { db } from './database-sqljs.js';
+import logger from './logger.js';
 
 export class ContextLearning {
   updateRelevanceScores(sessionId, wasSuccessful, filesActuallyUsed = []) {
@@ -8,7 +9,15 @@ export class ContextLearning {
 
     if (!session) return;
 
-    const includedFiles = JSON.parse(session.included_files);
+    // Safely parse included_files with validation
+    let includedFiles;
+    try {
+      includedFiles = session.included_files ? JSON.parse(session.included_files) : [];
+    } catch (error) {
+      logger.error('Error parsing included_files:', error);
+      includedFiles = [];
+    }
+    
     const taskType = session.task_type;
     const taskMode = session.task_mode;
 

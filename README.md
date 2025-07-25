@@ -34,28 +34,22 @@ See [QUICK_START.md](./QUICK_START.md) for 5-minute setup instructions.
 
 ## Installation
 
-### Quick Start (Pure JavaScript - No Build Tools Required)
+### Method 1: NPM Package (Recommended - Coming Soon)
 
 ```bash
-# This version uses pure JavaScript dependencies that don't require compilation
+# Once published to npm:
+npm install -g @smart-context/mcp-server
+```
+
+### Method 2: Direct from GitHub
+
+```bash
+git clone https://github.com/crisnc100/smart-context-mcp.git
+cd smart-context-mcp
 npm install
 ```
 
-### Alternative Installation (With Native Modules)
-
-If you want better performance and have build tools installed:
-
-```bash
-# First install build tools:
-# Ubuntu/WSL2: sudo apt-get install build-essential python3-dev
-# macOS: xcode-select --install
-
-# Then use the original package.json
-cp package.json.original package.json  # if you saved it
-npm install
-```
-
-See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed installation instructions and troubleshooting.
+See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions for all platforms.
 
 ## Usage
 
@@ -67,14 +61,15 @@ npm start
 
 ### Use with Claude Desktop
 
-Add to your Claude Desktop configuration:
+**IMPORTANT**: Smart Context needs to know WHERE your project files are located. You must set `PROJECT_ROOT` for each project.
 
+#### For NPM Installation (once published):
 ```json
 {
   "mcpServers": {
     "smart-context": {
-      "command": "node",
-      "args": ["/path/to/smart-context-pruning/src/index.js"],
+      "command": "npx",
+      "args": ["@smart-context/mcp-server"],
       "env": {
         "PROJECT_ROOT": "/path/to/your/project"
       }
@@ -83,17 +78,56 @@ Add to your Claude Desktop configuration:
 }
 ```
 
+#### For Local Installation:
+```json
+{
+  "mcpServers": {
+    "smart-context": {
+      "command": "node",
+      "args": ["/path/to/smart_context_mcp/src/index.js"],
+      "env": {
+        "PROJECT_ROOT": "/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+**First Time Setup?** Run the setup wizard tool in Claude:
+```
+Use the setup_wizard tool to check my Smart Context configuration
+```
+
 ## Available Tools
+
+### `setup_wizard` 🆕
+**START HERE!** Configure Smart Context for your project.
+
+**Parameters:**
+- `action`: 'check', 'configure', or 'list'
+- `projectPath`: Path to your project (for configure)
+- `projectName`: Friendly name for your project
 
 ### `get_optimal_context`
 Get the most relevant files for a coding task.
 
 **Parameters:**
 - `task` (required): Description of the coding task
-- `currentFile` (required): Path to the current file being edited
+- `currentFile`: Path to the current file being edited
 - `targetTokens`: Token budget (default: 6000)
 - `conversationId`: ID for conversation tracking
 - `progressiveLevel`: 1=immediate, 2=expanded, 3=comprehensive
+- `minRelevanceScore`: Minimum relevance threshold (0-1)
+
+### `set_project_scope`
+Configure file patterns to include/exclude for large projects.
+
+**Parameters:**
+- `name`: Name for this scope configuration
+- `includePaths`: Glob patterns to include (e.g., "src/**")
+- `excludePaths`: Glob patterns to exclude
+- `maxDepth`: Maximum directory depth
+- `activate`: Whether to activate immediately
 
 ### `record_session_outcome`
 Provide feedback on which files were actually helpful.
@@ -129,25 +163,29 @@ Get insights about learned patterns.
 **Parameters:**
 - `taskMode`: Filter by 'debug', 'feature', or 'refactor'
 
-## Example Usage
+### `apply_user_overrides`
+Apply manual file selection adjustments for learning.
 
-```javascript
-// 1. Get optimal context for debugging
-const context = await get_optimal_context({
-  task: "Fix the notification system not showing after user follows someone",
-  currentFile: "src/services/notification.service.ts",
-  conversationId: "conv-123"
-});
+**Parameters:**
+- `sessionId`: Session ID from get_optimal_context
+- `added`: Files manually added
+- `removed`: Files manually removed
+- `kept`: Files accepted as-is
 
-// 2. After completing the task, provide feedback
-await record_session_outcome({
-  sessionId: context.sessionId,
-  wasSuccessful: true,
-  filesActuallyUsed: [
-    "src/services/notification.service.ts",
-    "src/features/social/actions/follow.action.ts"
-  ]
-});
+## Example Usage in Claude
+
+```
+// First time setup
+Use the setup_wizard tool with action="check"
+
+// Get context for a task
+Use get_optimal_context to find files related to "fixing the user authentication flow"
+
+// Search for specific concepts
+Use search_codebase to find files containing "websocket connection handling"
+
+// Configure for large projects
+Use set_project_scope to only include src/** and exclude test files
 ```
 
 ## How It Works
@@ -208,25 +246,14 @@ The server can be configured through:
 - `SMART_CONTEXT_MAX_FILE_SIZE` - Maximum file size to scan (in bytes)
 - `SMART_CONTEXT_GIT_COMMIT_LIMIT` - Number of commits to analyze
 
-## Performance Tuning
+## Performance Optimization
 
-For large projects, you can optimize performance by:
+For large projects:
 
-1. **Using the optimized scanner**:
-   ```javascript
-   import { OptimizedFileScanner } from './src/fileScanner-optimized.js';
-   
-   const scanner = new OptimizedFileScanner(projectRoot, {
-     parallel: true,      // Enable parallel processing
-     batchSize: 10,       // Files per batch
-     maxFileSize: 512000, // 500KB limit
-     enableCache: true    // Cache file metadata
-   });
-   ```
-
-2. **Adjusting file size limits** to skip very large generated files
-3. **Using progressive context loading** to start with essential files
-4. **Enabling caching** for frequently accessed projects
+1. **Use Project Scopes**: Configure include/exclude patterns with `set_project_scope`
+2. **Adjust Token Budget**: Lower `targetTokens` for faster responses
+3. **Set Relevance Threshold**: Increase `minRelevanceScore` to be more selective
+4. **Progressive Loading**: Start with `progressiveLevel: 1` for immediate context
 
 ## Testing
 
@@ -265,31 +292,31 @@ See [COMPREHENSIVE_TEST_REPORT.md](./COMPREHENSIVE_TEST_REPORT.md) for technical
 
 ## 📚 Documentation
 
-- [API Documentation](./API_DOCUMENTATION.md) - Complete API reference
+- [Installation Guide](./INSTALLATION.md) - Platform-specific setup instructions
 - [Quick Start Guide](./QUICK_START.md) - Get running in 5 minutes
+- [Setup Visual Guide](./SETUP_VISUAL_GUIDE.md) - Step-by-step with screenshots
+- [API Documentation](./API_DOCUMENTATION.md) - Complete API reference
 - [Performance Benchmarks](./BENCHMARKS.md) - Detailed performance analysis
-- [Test Report](./COMPREHENSIVE_TEST_REPORT.md) - Test coverage and recommendations
-- [Production Ready Report](./PRODUCTION_READY_REPORT.md) - Release validation
 
 ## 🛠️ Troubleshooting
 
 ### Common Issues
 
-**"Cannot find module"**
-- Ensure you're using Node.js v16+
-- Run `npm install` in the project directory
+**"No files found"**
+- Run `setup_wizard` with `action="check"` to verify configuration
+- Ensure `PROJECT_ROOT` points to your actual project directory
+- Check that the directory contains code files (.js, .ts, .py, etc.)
 
-**"Files not being selected"**
-- Check your `PROJECT_ROOT` path is absolute
-- Verify files aren't in `.gitignore`
-- Run `smart-context analyze` to debug
+**"Server doesn't appear in Claude"**
+- Fully restart Claude Desktop (not just reload)
+- Check JSON syntax in your config file
+- Verify the command path exists
 
-**"High memory usage"**
-- Set `maxFileSize` limit in config
-- Add more `ignorePatterns`
-- Use progressive loading levels
+**Performance issues**
+- Use `set_project_scope` to limit scanning area
+- Reduce token budget or increase relevance threshold
 
-See [Issues](https://github.com/crisnc100/smart-context-mcp/issues) for more help.
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for comprehensive solutions and [Issues](https://github.com/crisnc100/smart-context-mcp/issues) for more help.
 
 ## 🤝 Contributing
 

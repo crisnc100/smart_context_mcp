@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "smart-context-example": {
+      "command": "node",
+      "args": ["C:\\Users\\crisn\\GitHub\\smart_context_mcp\\src\\index.js"],
+      "env": {
+        "PROJECT_ROOT": "C:\\Users\\crisn\\GitHub\\some-other-project"
+      }
+    },
+    "smart-context-self": {
+      "command": "node", 
+      "args": ["C:\\Users\\crisn\\GitHub\\smart_context_mcp\\src\\index.js"],
+      "env": {
+        "PROJECT_ROOT": "C:\\Users\\crisn\\GitHub\\smart_context_mcp"
+      }
+    }
+  }
+}

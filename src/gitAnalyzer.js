@@ -1,5 +1,6 @@
 import simpleGit from 'simple-git';
 import { db } from './database-sqljs.js';
+import logger from './logger.js';
 
 export class GitAnalyzer {
   constructor(repoPath) {
@@ -24,7 +25,7 @@ export class GitAnalyzer {
   async analyzeCoChanges(limit = 100) {
     // Check if this is a git repo first
     if (!(await this.checkGitRepo())) {
-      console.debug('Not a git repository, skipping co-change analysis');
+      logger.debug('Not a git repository, skipping co-change analysis');
       return new Map();
     }
 
@@ -61,7 +62,7 @@ export class GitAnalyzer {
           }
         } catch (commitError) {
           // Skip this commit if there's an error
-          console.debug(`Skipping commit ${commit.hash}: ${commitError.message}`);
+          logger.debug(`Skipping commit ${commit.hash}: ${commitError.message}`);
         }
       }
 
@@ -73,7 +74,7 @@ export class GitAnalyzer {
 
       return coChanges;
     } catch (error) {
-      console.error('Git analysis error:', error);
+      logger.error('Git analysis error:', error);
       return new Map();
     }
   }
@@ -119,7 +120,7 @@ export class GitAnalyzer {
         .sort((a, b) => b[1] - a[1])
         .map(([file, count]) => ({ file, modificationCount: count }));
     } catch (error) {
-      console.error('Git recent files error:', error);
+      logger.error('Git recent files error:', error);
       return [];
     }
   }

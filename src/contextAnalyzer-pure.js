@@ -6,6 +6,7 @@ import { SemanticSearch } from './semanticSearch.js';
 import { ConversationTracker } from './conversationTracker.js';
 import { GitAnalyzer } from './gitAnalyzer.js';
 import config from './config.js';
+import logger from './logger.js';
 
 export class ContextAnalyzer {
   constructor(projectRoot) {
@@ -210,10 +211,13 @@ export class ContextAnalyzer {
         reasons.push(`Frequently changed together (${(coChangeScore * 100).toFixed(0)}%)`);
       }
 
-      const pathSimilarity = this.calculatePathSimilarity(currentFile, file.path);
-      if (pathSimilarity > 0.5) {
-        score += pathSimilarity * 0.1;
-        reasons.push('Same directory/feature');
+      // Only calculate path similarity if currentFile is provided
+      if (currentFile) {
+        const pathSimilarity = this.calculatePathSimilarity(currentFile, file.path);
+        if (pathSimilarity > 0.5) {
+          score += pathSimilarity * 0.1;
+          reasons.push('Same directory/feature');
+        }
       }
 
       if (progressiveLevel === 1 && score < 0.6) {
@@ -309,7 +313,7 @@ export class ContextAnalyzer {
       const fullPath = path.join(this.projectRoot, filePath);
       return readFileSync(fullPath, 'utf-8');
     } catch (error) {
-      console.error(`Error reading file ${filePath}:`, error);
+      logger.error(`Error reading file ${filePath}:`, error);
       return `// Error reading file: ${filePath}`;
     }
   }
@@ -397,6 +401,11 @@ export class ContextAnalyzer {
   }
 
   calculatePathSimilarity(pathA, pathB) {
+    // Handle null/undefined paths
+    if (!pathA || !pathB) {
+      return 0;
+    }
+    
     const partsA = pathA.split('/');
     const partsB = pathB.split('/');
     

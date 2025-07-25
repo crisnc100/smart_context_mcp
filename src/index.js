@@ -11,6 +11,9 @@ import { ScopedFileScanner } from './fileScanner-scoped.js';
 import { ContextAnalyzer } from './contextAnalyzer-pure.js';
 import { ContextLearning } from './learning.js';
 import { GitAnalyzer } from './gitAnalyzer.js';
+import logger from './logger.js';
+import config from './config.js';
+import path from 'path';
 
 // Get project root from environment or default
 const projectRoot = process.env.PROJECT_ROOT || process.cwd();
@@ -39,7 +42,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'get_optimal_context',
-        description: 'Get optimal file context for a coding task with semantic understanding',
+        description: 'Get optimal file context for a coding task (⚠️ Run setup_wizard first if you haven\'t configured your project!)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -49,7 +52,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             currentFile: {
               type: 'string',
-              description: 'Path to the current file being edited',
+              description: 'Path to the current file being edited (optional)',
             },
             projectRoot: {
               type: 'string',
@@ -81,7 +84,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               default: 0.3,
             },
           },
-          required: ['task', 'currentFile'],
+          required: ['task'],
         },
       },
       {
@@ -155,6 +158,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Natural language search query',
             },
+            projectRoot: {
+              type: 'string',
+              description: 'Root directory of the project (optional)',
+            },
             limit: {
               type: 'number',
               description: 'Maximum results to return',
@@ -224,6 +231,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'setup_wizard',
+        description: 'FIRST TIME SETUP: Configure Smart Context for your project (START HERE!)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: ['check', 'configure', 'list'],
+              description: 'Action to perform: check current setup, configure new project, or list available projects',
+              default: 'check'
+            },
+            projectPath: {
+              type: 'string',
+              description: 'Path to your project directory (for configure action)'
+            },
+            projectName: {
+              type: 'string',
+              description: 'Friendly name for your project (for configure action)'
+            }
+          }
+        },
+      },
+      {
         name: 'set_project_scope',
         description: 'Configure project scope to limit file analysis for large codebases',
         inputSchema: {
@@ -267,14 +297,55 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   switch (name) {
     case 'get_optimal_context': {
+      // Determine the actual project root
+      const actualProjectRoot = args.projectRoot || projectRoot;
+      
+      // Log where we're scanning for debugging
+      logger.info(`Scanning project at: ${actualProjectRoot}`);
+      
       // Use scoped scanner for large projects
-      const scanner = new ScopedFileScanner(args.projectRoot || projectRoot);
+      const scanner = new ScopedFileScanner(actualProjectRoot);
       const projectFiles = await scanner.scanCodebase();
+      
+      // Check if we found any files
+      if (projectFiles.length === 0) {
+        const isUsingDefault = !args.projectRoot && !process.env.PROJECT_ROOT;
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'No files found',
+              message: isUsingDefault 
+                ? '🔴 SETUP REQUIRED: Smart Context doesn\'t know where your project is!'
+                : `No code files found in ${actualProjectRoot}.`,
+              currentPath: actualProjectRoot,
+              isDefaultPath: isUsingDefault,
+              quickFix: isUsingDefault ? {
+                step1: '🆕 Run setup_wizard first:',
+                command: 'setup_wizard({"action": "check"})',
+                step2: 'Then configure your project:',
+                command2: 'setup_wizard({"action": "configure", "projectPath": "C:\\\\your\\\\actual\\\\project"})'
+              } : {
+                checklist: [
+                  'Is this the correct project directory?',
+                  'Does it contain code files (.js, .ts, .py, etc.)?',
+                  'Check if .gitignore is excluding all files',
+                  'Try specifying projectRoot in the request'
+                ]
+              },
+              tip: isUsingDefault 
+                ? '💡 Smart Context needs to scan your actual project files, not Claude\'s directory!'
+                : 'Try running setup_wizard to check your configuration'
+            }, null, 2)
+          }]
+        };
+      }
 
       // Get optimal context
       const context = await analyzer.getOptimalContext({
         task: args.task,
-        currentFile: args.currentFile,
+        currentFile: args.currentFile || null,
         targetTokens: args.targetTokens || 6000,
         model: args.model || 'claude-3-opus',
         projectFiles,
@@ -356,25 +427,83 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     case 'record_session_outcome': {
-      learning.updateRelevanceScores(
-        args.sessionId,
-        args.wasSuccessful,
-        args.filesActuallyUsed
-      );
+      try {
+        // Validate sessionId exists
+        if (!args.sessionId) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                error: 'Missing sessionId',
+                message: 'sessionId is required to record outcome'
+              }, null, 2)
+            }]
+          };
+        }
 
-      return {
-        content: [
-          {
+        // Check if session exists
+        const session = db.prepare('SELECT * FROM context_sessions WHERE id = ?').get(args.sessionId);
+        if (!session) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                error: 'Session not found',
+                sessionId: args.sessionId,
+                message: 'The specified session does not exist'
+              }, null, 2)
+            }]
+          };
+        }
+
+        // Update learning model
+        learning.updateRelevanceScores(
+          args.sessionId,
+          args.wasSuccessful,
+          args.filesActuallyUsed || []
+        );
+
+        return {
+          content: [{
             type: 'text',
-            text: 'Session outcome recorded. Learning model updated.',
-          },
-        ],
-      };
+            text: JSON.stringify({
+              success: true,
+              message: 'Session outcome recorded. Learning model updated.',
+              sessionId: args.sessionId
+            }, null, 2)
+          }]
+        };
+      } catch (error) {
+        logger.error('Error recording session outcome:', error);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Failed to record outcome',
+              message: error.message
+            }, null, 2)
+          }]
+        };
+      }
     }
 
     case 'search_codebase': {
-      const scanner = new FileScanner(projectRoot);
+      const actualProjectRoot = args.projectRoot || projectRoot;
+      const scanner = new FileScanner(actualProjectRoot);
       const projectFiles = scanner.scanCodebase();
+      
+      if (projectFiles.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'No files found',
+              message: `No code files found in ${actualProjectRoot}. Please set PROJECT_ROOT correctly.`,
+              currentPath: actualProjectRoot
+            }, null, 2)
+          }]
+        };
+      }
       
       const queryAnalysis = analyzer.semanticSearch.analyzeQuery(args.query);
       const results = await analyzer.semanticSearch.findSimilarFiles(
@@ -506,6 +635,133 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
 
+    case 'setup_wizard': {
+      const { action = 'check', projectPath, projectName } = args;
+      
+      switch (action) {
+        case 'check': {
+          const currentRoot = process.env.PROJECT_ROOT || process.cwd();
+          const isDefault = !process.env.PROJECT_ROOT;
+          
+          // Try to scan current directory
+          const scanner = new ScopedFileScanner(currentRoot);
+          let fileCount = 0;
+          let sampleFiles = [];
+          
+          try {
+            const files = await scanner.scanCodebase();
+            fileCount = files.length;
+            sampleFiles = files.slice(0, 5).map(f => f.path);
+          } catch (error) {
+            logger.error('Scan error:', error);
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                status: isDefault ? 'not_configured' : 'configured',
+                message: isDefault 
+                  ? '⚠️ PROJECT_ROOT not configured! Smart Context doesn\'t know where your project is.'
+                  : '✅ PROJECT_ROOT is configured',
+                currentPath: currentRoot,
+                isDefault,
+                filesFound: fileCount,
+                sampleFiles,
+                nextSteps: isDefault ? [
+                  '1. Use setup_wizard with action="configure" to set up your project',
+                  '2. Or manually set PROJECT_ROOT in Claude Desktop config',
+                  '3. See the setup guide at QUICK_START.md'
+                ] : [
+                  `Currently analyzing: ${currentRoot}`,
+                  `Found ${fileCount} code files`,
+                  'Use action="list" to see all configured projects'
+                ],
+                setupCommand: isDefault ? 
+                  'Use: setup_wizard({"action": "configure", "projectPath": "C:\\\\path\\\\to\\\\your\\\\project"})' : null
+              }, null, 2)
+            }]
+          };
+        }
+        
+        case 'configure': {
+          if (!projectPath) {
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  error: 'Project path required',
+                  message: 'Please provide the path to your project directory',
+                  example: 'setup_wizard({"action": "configure", "projectPath": "C:\\\\Users\\\\you\\\\my-project", "projectName": "My Project"})'
+                }, null, 2)
+              }]
+            };
+          }
+          
+          // Generate configuration
+          const isWindows = process.platform === 'win32';
+          const configPath = isWindows 
+            ? '%APPDATA%\\Claude\\claude_desktop_config.json'
+            : '~/Library/Application Support/Claude/claude_desktop_config.json';
+          
+          const name = projectName || path.basename(projectPath);
+          const serverName = `smart-context-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+          
+          const configSnippet = {
+            [serverName]: {
+              command: 'node',
+              args: [process.argv[1]], // Current script path
+              env: {
+                PROJECT_ROOT: projectPath
+              }
+            }
+          };
+          
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                message: '🎉 Configuration generated! Follow these steps:',
+                steps: [
+                  `1. Open your Claude Desktop config at: ${configPath}`,
+                  '2. Add this to the "mcpServers" section:',
+                  JSON.stringify(configSnippet, null, 2),
+                  '3. Save the file',
+                  '4. Completely restart Claude Desktop',
+                  '5. Test with: "Find any JavaScript files in my project"'
+                ],
+                projectDetails: {
+                  name: name,
+                  path: projectPath,
+                  serverName: serverName
+                },
+                troubleshooting: [
+                  'Make sure to use double backslashes in Windows paths',
+                  'The config file might not exist yet - create it if needed',
+                  'You must fully restart Claude Desktop, not just reload'
+                ]
+              }, null, 2)
+            }]
+          };
+        }
+        
+        case 'list': {
+          // This would ideally read from a config file
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                message: 'To see all projects, check your Claude Desktop config',
+                currentProject: process.env.PROJECT_ROOT || 'Not configured',
+                hint: 'Each "smart-context-*" entry in mcpServers is a different project'
+              }, null, 2)
+            }]
+          };
+        }
+      }
+    }
+    
     case 'set_project_scope': {
       const { name = 'default', includePaths = [], excludePaths = [], maxDepth = 10, activate = true } = args;
       
@@ -572,12 +828,15 @@ async function main() {
   
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Smart Context Pruning MCP server v2.0 running on stdio');
+  logger.info('Smart Context Pruning MCP server v2.0 running on stdio');
   
   // Run initial git analysis in background
   setTimeout(() => {
-    gitAnalyzer.analyzeCoChanges(100).catch(console.error);
+    gitAnalyzer.analyzeCoChanges(100).catch(err => logger.error('Git analysis error:', err));
   }, 1000);
 }
 
-main().catch(console.error);
+main().catch(err => {
+  logger.error('Fatal error:', err);
+  process.exit(1);
+});

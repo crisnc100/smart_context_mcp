@@ -1,12 +1,13 @@
 import { OptimizedFileScanner } from './fileScanner-optimized.js';
 import path from 'path';
+import logger from './logger.js';
 
 export class ScopedFileScanner extends OptimizedFileScanner {
   constructor(projectRoot, options = {}) {
     super(projectRoot, options);
     this.scope = null;
     // Load scope asynchronously after construction
-    this.loadActiveScope().catch(err => console.debug('Scope loading:', err));
+    this.loadActiveScope().catch(err => logger.debug('Scope loading:', err));
   }
 
   async loadActiveScope() {
@@ -23,10 +24,10 @@ export class ScopedFileScanner extends OptimizedFileScanner {
           excludePaths: JSON.parse(activeScope.exclude_paths || '[]'),
           maxDepth: activeScope.max_depth || 10
         };
-        console.log(`Loaded active scope: ${this.scope.name}`);
+        logger.info(`Loaded active scope: ${this.scope.name}`);
       }
     } catch (error) {
-      console.debug('No active scope found');
+      logger.debug('No active scope found');
     }
   }
 
@@ -84,12 +85,12 @@ export class ScopedFileScanner extends OptimizedFileScanner {
   }
 
   async scanCodebase() {
-    console.log('🔍 Scanning with scope:', this.scope ? this.scope.name : 'none');
+    logger.info('🔍 Scanning with scope:', this.scope ? this.scope.name : 'none');
     
     if (this.scope) {
-      console.log(`  Include: ${this.scope.includePaths.join(', ') || 'all'}`);
-      console.log(`  Exclude: ${this.scope.excludePaths.join(', ') || 'none'}`);
-      console.log(`  Max depth: ${this.scope.maxDepth}`);
+      logger.info(`  Include: ${this.scope.includePaths.join(', ') || 'all'}`);
+      logger.info(`  Exclude: ${this.scope.excludePaths.join(', ') || 'none'}`);
+      logger.info(`  Max depth: ${this.scope.maxDepth}`);
     }
 
     // Get all files from parent scanner
@@ -97,14 +98,14 @@ export class ScopedFileScanner extends OptimizedFileScanner {
     
     // If no scope, return all files
     if (!this.scope) {
-      console.log(`✅ Scanned ${allFiles.length} files (no scope)`);
+      logger.info(`✅ Scanned ${allFiles.length} files (no scope)`);
       return allFiles;
     }
     
     // Filter files based on scope
     const scopedFiles = allFiles.filter(file => this.shouldScanFile(file.path));
     
-    console.log(`✅ Scanned ${scopedFiles.length} files within scope (filtered from ${allFiles.length})`);
+    logger.info(`✅ Scanned ${scopedFiles.length} files within scope (filtered from ${allFiles.length})`);
     
     return scopedFiles;
   }

@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import path from 'path';
+import logger from './logger.js';
 
 class ConfigLoader {
   constructor() {
@@ -22,9 +23,9 @@ class ConfigLoader {
           const fileContent = readFileSync(configPath, 'utf-8');
           const fileConfig = JSON.parse(fileContent);
           config = this.deepMerge(config, fileConfig);
-          console.debug(`Loaded config from ${configPath}`);
+          logger.debug(`Loaded config from ${configPath}`);
         } catch (error) {
-          console.error(`Failed to load config from ${configPath}:`, error.message);
+          logger.error(`Failed to load config from ${configPath}:`, error.message);
         }
       }
     }
