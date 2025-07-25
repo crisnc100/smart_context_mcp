@@ -49,6 +49,13 @@ cd smart-context-mcp
 npm install
 ```
 
+### Method 3: Docker (Experimental)
+
+```bash
+docker pull smartcontext/mcp-server:latest
+docker run -it -v $(pwd):/workspace:ro smartcontext/mcp-server
+```
+
 See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions for all platforms.
 
 ## Usage

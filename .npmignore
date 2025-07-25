@@ -29,6 +29,11 @@ yarn-error.log*
 *.swo
 *~
 
+# Docker files (not needed in npm package)
+Dockerfile
+docker-compose.yml
+DOCKER_SETUP.md
+
 # OS files
 .DS_Store
 Thumbs.db

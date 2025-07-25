@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  smart-context:
+    build: .
+    image: smart-context-mcp:latest
+    environment:
+      - PROJECT_ROOT=/workspace
+      - NODE_ENV=production
+    volumes:
+      # Mount your project directory here
+      - ${PROJECT_PATH:-./}:/workspace:ro
+      # Persist learning data
+      - smart-context-data:/app/data
+    stdin_open: true
+    tty: true
+    # For MCP stdio communication
+    command: node src/index.js
+
+volumes:
+  smart-context-data:
