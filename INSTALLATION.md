@@ -2,8 +2,14 @@
 
 ## 🚀 Quick Install
 
-### Method 1: NPM Package (Recommended)
+### For Claude Code CLI (Recommended)
+```bash
+cd your-project
+npm install @crisnc100/smart-context-mcp
+# Create .mcp.json as shown below
+```
 
+### For Claude Desktop
 ```bash
 npm install -g @crisnc100/smart-context-mcp
 ```
@@ -16,7 +22,27 @@ cd smart-context-mcp
 npm install
 ```
 
-## 📋 Configuration for Claude Desktop
+## 📋 Configuration
+
+### Claude Code CLI Configuration
+
+Create `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "smart-context": {
+      "command": "node",
+      "args": ["./node_modules/@crisnc100/smart-context-mcp/src/index.js"],
+      "env": {
+        "PROJECT_ROOT": "."
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop Configuration
 
 ### Windows Configuration
 

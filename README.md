@@ -59,13 +59,32 @@ See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions for all
 
 ## Usage
 
-### Start the server
+### For Claude Code CLI (Project-Specific)
 
+Install in your project:
 ```bash
-npm start
+cd your-project
+npm install @crisnc100/smart-context-mcp
 ```
 
-### Use with Claude Desktop
+Create `.mcp.json` in project root:
+```json
+{
+  "mcpServers": {
+    "smart-context": {
+      "command": "node",
+      "args": ["./node_modules/@crisnc100/smart-context-mcp/src/index.js"],
+      "env": {
+        "PROJECT_ROOT": "."
+      }
+    }
+  }
+}
+```
+
+See [CLAUDE_CODE_SETUP.md](./CLAUDE_CODE_SETUP.md) for detailed instructions.
+
+### For Claude Desktop (Global)
 
 **IMPORTANT**: Smart Context needs to know WHERE your project files are located. You must set `PROJECT_ROOT` for each project.
 
