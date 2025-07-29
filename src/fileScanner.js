@@ -161,12 +161,32 @@ export class FileScanner {
     const ext = path.extname(filePath);
     
     if (['.js', '.jsx', '.ts', '.tsx'].includes(ext)) {
-      // Function declarations and arrow functions
-      const funcRegex = /(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>)/g;
-      let match;
-      while ((match = funcRegex.exec(content)) !== null) {
-        functions.push(match[1] || match[2]);
-      }
+      // Multiple patterns to catch different function styles
+      const patterns = [
+        // function declarations: function myFunc() {}
+        /function\s+(\w+)\s*\(/g,
+        // const/let/var arrow functions: const myFunc = () => {}
+        /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>/g,
+        // const/let/var regular functions: const myFunc = function() {}
+        /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?function/g,
+        // export function: export function myFunc() {}
+        /export\s+(?:async\s+)?function\s+(\w+)/g,
+        // export const arrow: export const myFunc = () => {}
+        /export\s+(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>/g,
+        // method shorthand in objects: myFunc() {}
+        /^\s*(\w+)\s*\([^)]*\)\s*\{/gm,
+        // TypeScript method signatures: myFunc(param: type): returnType
+        /^\s*(?:public|private|protected)?\s*(?:static)?\s*(\w+)\s*\([^)]*\)\s*:/gm
+      ];
+      
+      patterns.forEach(regex => {
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+          if (match[1] && !['if', 'for', 'while', 'switch', 'catch'].includes(match[1])) {
+            functions.push(match[1]);
+          }
+        }
+      });
     } else if (['.py'].includes(ext)) {
       // Python functions
       const pyFuncRegex = /def\s+(\w+)\s*\(/g;

@@ -1,6 +1,6 @@
 {
   "name": "@crisnc100/smart-context-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Intelligent MCP server for optimal file context selection in LLM coding tasks",
   "main": "src/index.js",
   "type": "module",

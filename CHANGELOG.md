@@ -5,6 +5,26 @@ All notable changes to Smart Context MCP Server will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-27
+
+### Added
+- Query Enhancement System that understands implicit code patterns
+- Function-first semantic matching with 0.4 weight priority
+- File pattern matching for common code conventions (formatter, utils, etc.)
+- Fallback mechanism to always show top results even below threshold
+- Comprehensive test suite with 10+ difficult test cases
+
+### Changed
+- Lowered default relevance threshold from 0.3 to 0.15
+- Enhanced function extraction with multiple regex patterns
+- Improved semantic similarity calculation with code-specific priorities
+- Better tokenization including camelCase variations
+
+### Fixed
+- Issue where files like `exerciseFormatters.ts` weren't found for queries like "exercise naming formatting variation names"
+- Empty result sets when all files scored below threshold
+- Missing function detection for arrow functions and TypeScript methods
+
 ## [1.0.0] - 2025-01-25
 
 ### Added

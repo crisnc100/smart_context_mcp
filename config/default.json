@@ -5,11 +5,11 @@
   },
   "context": {
     "defaultTokenBudget": 6000,
-    "minRelevanceScore": 0.3,
+    "minRelevanceScore": 0.15,
     "progressiveLevels": {
-      "immediate": 0.6,
-      "expanded": 0.4,
-      "comprehensive": 0.2
+      "immediate": 0.4,
+      "expanded": 0.25,
+      "comprehensive": 0.15
     }
   },
   "learning": {

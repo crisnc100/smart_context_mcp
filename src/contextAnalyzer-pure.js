@@ -263,7 +263,7 @@ export class ContextAnalyzer {
     return result || { score: 0.5, confidence: 0.5 };
   }
 
-  buildOptimalContext({ fileScores, targetTokens, currentFile, conversationId, minRelevanceScore = 0.3 }) {
+  buildOptimalContext({ fileScores, targetTokens, currentFile, conversationId, minRelevanceScore = 0.15 }) {
     const sortedFiles = Array.from(fileScores.entries())
       .sort((a, b) => b[1].score - a[1].score);
 
@@ -271,6 +271,7 @@ export class ContextAnalyzer {
     const excluded = [];
     let totalTokens = 0;
 
+    // First pass: Include files meeting criteria
     for (const [filePath, scoreData] of sortedFiles) {
       const fileContent = this.getFileContent(filePath);
       const tokens = this.countTokens(fileContent);
@@ -295,8 +296,39 @@ export class ContextAnalyzer {
           path: filePath,
           score: scoreData.score,
           reasons: totalTokens + tokens > targetTokens ? 
-            ['Token budget exceeded'] : ['Low relevance score']
+            ['Token budget exceeded'] : [`Score ${scoreData.score.toFixed(2)} below threshold ${minRelevanceScore}`]
         });
+      }
+    }
+
+    // CRITICAL: Never return empty results if we have files
+    if (included.length === 0 && sortedFiles.length > 0) {
+      // Include at least top 5 files regardless of score
+      const topFiles = sortedFiles.slice(0, 5);
+      included.push({
+        path: '⚠️ Low Relevance Results',
+        score: 0,
+        confidence: 0,
+        tokens: 100,
+        reasons: ['All files scored below threshold, showing top matches'],
+        content: '// All files scored below the relevance threshold.\\n// Showing top 5 matches anyway:\\n'
+      });
+      
+      for (const [filePath, scoreData] of topFiles) {
+        const fileContent = this.getFileContent(filePath);
+        const tokens = this.countTokens(fileContent);
+        
+        if (totalTokens + tokens <= targetTokens) {
+          included.push({
+            path: filePath,
+            score: scoreData.score,
+            confidence: scoreData.confidence,
+            tokens,
+            reasons: [...scoreData.reasons, 'Included despite low score'],
+            content: fileContent
+          });
+          totalTokens += tokens;
+        }
       }
     }
 
@@ -304,7 +336,8 @@ export class ContextAnalyzer {
       included,
       excluded,
       totalTokens,
-      tokenBudget: targetTokens
+      tokenBudget: targetTokens,
+      lowScoreWarning: included.some(f => f.path === '⚠️ Low Relevance Results')
     };
   }
 

@@ -1,14 +1,18 @@
 import nlp from 'compromise';
 import stopword from 'stopword';
 import { db } from './database-sqljs.js';
+import { QueryEnhancer } from './queryEnhancer.js';
 
 export class SemanticSearch {
   constructor() {
-    // Initialize compromise for NLP tasks
+    this.queryEnhancer = new QueryEnhancer();
   }
 
-  // Extract semantic meaning from query
+  // Extract semantic meaning from query with code-specific enhancements
   analyzeQuery(query) {
+    // First, enhance the query with code-specific patterns
+    const enhanced = this.queryEnhancer.enhanceQuery(query);
+    
     // Use compromise for NLP analysis
     const doc = nlp(query);
     
@@ -24,19 +28,33 @@ export class SemanticSearch {
              token;
     });
     
-    // Extract concepts
-    const concepts = this.extractConcepts(query);
+    // Extract concepts - combine NLP and code-specific
+    const nlpConcepts = this.extractConcepts(query);
+    const allConcepts = [...new Set([
+      ...nlpConcepts,
+      ...enhanced.concepts,
+      ...enhanced.patterns
+    ])];
+    
+    // Add function hints to tokens for better matching
+    const enhancedTokens = [...new Set([
+      ...tokens,
+      ...enhanced.functionHints.map(f => f.toLowerCase())
+    ])];
     
     // Detect intent
     const intent = this.detectIntent(query);
     
     return {
       original: query,
-      tokens,
+      tokens: enhancedTokens,
       stemmed,
-      concepts,
+      concepts: allConcepts,
       intent,
-      entities: this.extractEntities(query)
+      entities: this.extractEntities(query),
+      codePatterns: enhanced.patterns,
+      functionHints: enhanced.functionHints,
+      fileHints: enhanced.fileHints
     };
   }
 
@@ -113,33 +131,65 @@ export class SemanticSearch {
   // Calculate semantic similarity between query and file
   calculateSemanticSimilarity(queryAnalysis, fileData) {
     const fileContent = JSON.stringify(fileData).toLowerCase();
+    const filePath = fileData.path.toLowerCase();
     let similarity = 0;
+    let matchReasons = [];
+
+    // Check function hints (HIGHEST PRIORITY for code search)
+    if (queryAnalysis.functionHints && fileData.functions) {
+      for (const hint of queryAnalysis.functionHints) {
+        const hintLower = hint.toLowerCase();
+        // Check actual function names
+        for (const func of fileData.functions) {
+          if (func.toLowerCase().includes(hintLower) || hintLower.includes(func.toLowerCase())) {
+            similarity += 0.4;
+            matchReasons.push(`Function: ${func}`);
+          }
+        }
+        // Check file content for function patterns
+        if (fileContent.includes(hintLower)) {
+          similarity += 0.2;
+        }
+      }
+    }
+
+    // File path pattern matching (formatter, utils, etc)
+    if (queryAnalysis.fileHints) {
+      for (const hint of queryAnalysis.fileHints) {
+        if (filePath.includes(hint)) {
+          similarity += 0.3;
+          matchReasons.push(`File pattern: ${hint}`);
+        }
+      }
+    }
 
     // Concept matching
     for (const concept of queryAnalysis.concepts) {
       if (fileContent.includes(concept)) {
-        similarity += 0.2;
+        similarity += 0.15;
       }
     }
 
     // Token matching with stemming
-    for (const stem of queryAnalysis.stemmed) {
-      if (fileContent.includes(stem)) {
+    for (const token of queryAnalysis.tokens) {
+      if (token.length > 3 && fileContent.includes(token)) {
         similarity += 0.1;
       }
     }
 
-    // Entity matching (higher weight)
+    // Entity matching (explicit function names in query)
     for (const func of queryAnalysis.entities.functions) {
       if (fileData.functions && fileData.functions.includes(func)) {
-        similarity += 0.3;
+        similarity += 0.5;
+        matchReasons.push(`Exact function: ${func}`);
       }
     }
 
     // File path matching
     for (const file of queryAnalysis.entities.files) {
       if (fileData.path.includes(file)) {
-        similarity += 0.5;
+        similarity += 0.6;
+        matchReasons.push(`File path: ${file}`);
       }
     }
 
