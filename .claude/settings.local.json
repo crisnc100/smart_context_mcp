@@ -4,7 +4,9 @@
       "Bash(git config:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": []
   }

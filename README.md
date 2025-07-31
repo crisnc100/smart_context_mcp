@@ -5,57 +5,60 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io)
 
-An intelligent MCP server that learns from usage patterns to provide optimal file context selection for LLMs during coding tasks. Stop wasting tokens on irrelevant files - let Smart Context learn what's important!
+An intelligent MCP server that learns from your coding patterns to automatically select the most relevant files for LLM context. **Stop wasting tokens on irrelevant files** - let Smart Context learn what matters for your specific tasks!
 
 ## 🚀 Quick Start
 
-See [QUICK_START.md](./QUICK_START.md) for 5-minute setup instructions.
+**New to Smart Context?** Follow our [5-minute setup guide](./QUICK_START.md) to get started right away!
 
-## Features
+**Already familiar with MCP?** Jump to [Installation](#installation) below.
 
-- **Semantic Understanding**: Uses NLP to understand task intent beyond simple keyword matching
-- **Task-Specific Modes**: Different strategies for debug, feature development, and refactoring tasks
-- **Full Transparency**: Shows confidence scores and reasoning for every file selection
-- **Progressive Loading**: Start with immediate context and expand as needed
-- **Conversation Awareness**: Tracks files already viewed to avoid repetition
-- **Git Integration**: Analyzes co-change patterns for better predictions (handles non-git directories gracefully)
-- **Learning from Usage**: Tracks which files were actually helpful and improves over time
-- **Robust Error Handling**: 
-  - Gracefully handles non-git repositories
-  - Skips files that exceed size limits
-  - Handles malformed code files
-  - Supports Unicode and special characters
-  - Manages file permission errors
-- **Performance Optimizations**:
-  - Parallel file processing for faster scanning
-  - Intelligent caching of file metadata
-  - Configurable file size limits
-  - Memory-efficient batch processing
+## ✨ Key Features
 
-## Installation
+- **🧠 Semantic Understanding**: Uses NLP to understand what you're trying to accomplish, not just keywords
+- **🎯 Task-Specific Modes**: Automatically adapts strategy for debugging, feature development, and refactoring
+- **📊 Full Transparency**: See confidence scores and reasoning behind every file recommendation
+- **📈 Progressive Loading**: Start with immediate context, expand when you need more
+- **💬 Conversation Awareness**: Remembers what files you've already seen to avoid repetition
+- **🔗 Git Integration**: Learns from your commit history to predict related files
+- **🎓 Learning from Usage**: Gets smarter over time by tracking which files actually helped you
+- **🛡️ Robust Error Handling**: 
+  - Works with any project (Git or non-Git)
+  - Gracefully skips large or problematic files
+  - Handles Unicode and special characters
+  - Never crashes on file permission issues
+- **⚡ Performance Optimized**:
+  - Fast parallel file processing (~85 files/second)
+  - Smart caching for instant responses
+  - Configurable limits to control resource usage
+  - Memory-efficient for large codebases
 
-### Method 1: NPM Package (Recommended)
+## 📦 Installation
 
+Choose the method that works best for you:
+
+### 🌟 Method 1: NPM Package (Recommended)
+**Easiest for most users**
 ```bash
 npm install -g @crisnc100/smart-context-mcp
 ```
 
-### Method 2: Direct from GitHub
-
+### 🔧 Method 2: Direct from GitHub
+**For developers who want the latest code**
 ```bash
 git clone https://github.com/crisnc100/smart-context-mcp.git
 cd smart-context-mcp
 npm install
 ```
 
-### Method 3: Docker (Experimental)
-
+### 🐳 Method 3: Docker (Experimental)
+**For containerized deployments**
 ```bash
 docker pull smartcontext/mcp-server:latest
 docker run -it -v $(pwd):/workspace:ro smartcontext/mcp-server
 ```
 
-See [INSTALLATION.md](./INSTALLATION.md) for detailed setup instructions for all platforms.
+📋 **Need detailed setup instructions?** See our comprehensive [Installation Guide](./INSTALLATION.md) for platform-specific instructions.
 
 ## Usage
 
@@ -123,26 +126,28 @@ See [CLAUDE_CODE_SETUP.md](./CLAUDE_CODE_SETUP.md) for detailed instructions.
 Use the setup_wizard tool to check my Smart Context configuration
 ```
 
-## Available Tools
+## 🛠️ Available Tools
 
-### `setup_wizard` 🆕
-**START HERE!** Configure Smart Context for your project.
+### 🎯 `setup_wizard` - **START HERE!**
+Configure Smart Context for your project. This is your first step!
 
-**Parameters:**
-- `action`: 'check', 'configure', or 'list'
-- `projectPath`: Path to your project (for configure)
-- `projectName`: Friendly name for your project
+**What it does:** Checks your configuration and helps set up Smart Context properly.
 
-### `get_optimal_context`
-Get the most relevant files for a coding task.
+**Key parameters:**
+- `action`: Choose 'check' to verify setup, 'configure' to set up a new project
+- `projectPath`: Where your code lives
+- `projectName`: A friendly name for your project
 
-**Parameters:**
-- `task` (required): Description of the coding task
-- `currentFile`: Path to the current file being edited
-- `targetTokens`: Token budget (default: 6000)
-- `conversationId`: ID for conversation tracking
-- `progressiveLevel`: 1=immediate, 2=expanded, 3=comprehensive
-- `minRelevanceScore`: Minimum relevance threshold (0-1)
+### 🔍 `get_optimal_context` - **Main Tool**
+Get the most relevant files for any coding task.
+
+**What it does:** Analyzes your task and returns the best files to include in context.
+
+**Key parameters:**
+- `task` (required): Describe what you're trying to do ("fix login bug", "add new feature")
+- `currentFile`: The file you're currently working on
+- `targetTokens`: How many tokens you want to use (default: 6000)
+- `progressiveLevel`: 1=immediate context, 2=expanded, 3=comprehensive
 
 ### `set_project_scope`
 Configure file patterns to include/exclude for large projects.
@@ -295,9 +300,20 @@ npm run test:error        # Error handling tests
 npm test                  # Full validation suite
 ```
 
+### Available Test Files
+
+- `test-final-validation.js` - Main validation suite
+- `test-scanner.js` - File scanning functionality
+- `test-performance.js` - Performance benchmarks
+- `test-error-handling.js` - Error handling tests
+- `test-cross-platform.js` - Cross-platform compatibility
+- `test-mcp-server.js` - MCP server functionality
+- `run-all-tests.js` - Test runner for all suites
+- Various scenario tests for query styles, edge cases, and real-world usage
+
 ## 📊 Performance
 
-See [BENCHMARKS.md](./BENCHMARKS.md) for detailed performance analysis:
+Performance characteristics:
 - **Scanning**: ~85 files/second
 - **Response**: <200ms (warm cache)
 - **Memory**: ~30KB per file
@@ -313,7 +329,7 @@ The Smart Context MCP Server uses a multi-factor scoring system:
 4. **Learning System**: Improves from your feedback
 5. **Task Modes**: Adapts strategy for debug/feature/refactor
 
-See [COMPREHENSIVE_TEST_REPORT.md](./COMPREHENSIVE_TEST_REPORT.md) for technical details.
+See [TEST_RESULTS_COMPREHENSIVE.md](./TEST_RESULTS_COMPREHENSIVE.md) for technical details.
 
 ## 📚 Documentation
 
@@ -321,7 +337,12 @@ See [COMPREHENSIVE_TEST_REPORT.md](./COMPREHENSIVE_TEST_REPORT.md) for technical
 - [Quick Start Guide](./QUICK_START.md) - Get running in 5 minutes
 - [Setup Visual Guide](./SETUP_VISUAL_GUIDE.md) - Step-by-step with screenshots
 - [API Documentation](./API_DOCUMENTATION.md) - Complete API reference
-- [Performance Benchmarks](./BENCHMARKS.md) - Detailed performance analysis
+- [Claude Code Setup](./CLAUDE_CODE_SETUP.md) - Setup for Claude Code CLI
+- [Docker Setup](./DOCKER_SETUP.md) - Docker deployment guide
+- [Test Results](./TEST_RESULTS_COMPREHENSIVE.md) - Comprehensive test analysis
+- [Feedback Analysis](./FEEDBACK_ANALYSIS.md) - User feedback and improvements
+- [Improvements v1.0.1](./IMPROVEMENTS_v1.0.1.md) - Latest version improvements
+- [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
 
 ## 🛠️ Troubleshooting
 
