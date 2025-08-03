@@ -254,6 +254,35 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'smart_grep',
+        description: 'Generate optimized grep commands based on intelligent context analysis. Combines smart-context file ranking with targeted grep patterns for efficient code search.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Natural language query about what you want to find'
+            },
+            maxFiles: {
+              type: 'number',
+              description: 'Maximum number of files to include in grep search',
+              default: 5
+            },
+            includeContext: {
+              type: 'boolean',
+              description: 'Include context lines around matches (-C flag)',
+              default: true
+            },
+            projectRoot: {
+              type: 'string',
+              description: 'Root directory of the project',
+              default: '.'
+            }
+          },
+          required: ['query']
+        },
+      },
+      {
         name: 'set_project_scope',
         description: 'Configure project scope to limit file analysis for large codebases',
         inputSchema: {
@@ -400,6 +429,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           availableLevels: [1, 2, 3],
         },
       };
+
+      // Add grep commands to help users see actual code
+      if (response.included && response.included.length > 0) {
+        // Extract keywords from the task
+        const keywords = args.task.toLowerCase()
+          .split(/\s+/)
+          .filter(word => word.length > 3 && !['what', 'where', 'when', 'does', 'work', 'find', 'show'].includes(word))
+          .slice(0, 3);
+        
+        const pattern = keywords.join('|');
+        const topFiles = response.included.slice(0, 3).map(f => f.path).join(' ');
+        
+        response.grepCommands = {
+          primary: `grep -n -C 3 '${pattern}' ${topFiles}`,
+          focusedSearch: `grep -n '${pattern}' ${response.included[0]?.path || '.'}`,
+          broaderSearch: `grep -r -n '${keywords[0]}' --include="*.js" .`,
+          usage: "Run these commands to see actual code in the identified files"
+        };
+      }
       
       // Return in format expected by tests and MCP
       return {
@@ -512,19 +560,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         args.limit || 10
       );
 
+      // Build response with grep enhancement
+      const response = {
+        query: args.query,
+        interpretation: queryAnalysis,
+        results: results.map(r => ({
+          file: r.file,
+          similarity: (r.similarity * 100).toFixed(0) + '%',
+          matchedConcepts: r.matchedConcepts,
+        })),
+      };
+
+      // Add grep commands if we have results
+      if (results.length > 0) {
+        const searchTerms = queryAnalysis.concepts.concat(queryAnalysis.entities)
+          .filter(term => term && term.length > 2)
+          .slice(0, 3);
+        
+        const pattern = searchTerms.length > 0 ? searchTerms.join('|') : args.query.split(' ')[0];
+        const topFiles = results.slice(0, 5).map(r => r.file).join(' ');
+        
+        response.grepCommands = {
+          primary: `grep -n '${pattern}' ${topFiles}`,
+          withContext: `grep -n -C 2 '${pattern}' ${topFiles}`,
+          findAll: `grep -r -l '${searchTerms[0] || args.query.split(' ')[0]}' .`,
+          usage: "Use these commands to see actual code in the ranked files"
+        };
+      }
+
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              query: args.query,
-              interpretation: queryAnalysis,
-              results: results.map(r => ({
-                file: r.file,
-                similarity: (r.similarity * 100).toFixed(0) + '%',
-                matchedConcepts: r.matchedConcepts,
-              })),
-            }, null, 2),
+            text: JSON.stringify(response, null, 2),
           },
         ],
       };
@@ -560,11 +628,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         args.relationshipType || 'all'
       );
 
+      // Enhance with grep commands to explore relationships
+      const fileName = args.filePath.split('/').pop().replace(/\.(js|jsx|ts|tsx)$/, '');
+      const enhancedRelationships = {
+        ...relationships,
+        grepCommands: {
+          findImports: `grep -n "import.*${fileName}\\|require.*${fileName}" --include="*.js" -r .`,
+          findUsage: `grep -n "\\b${fileName}\\b\\|<${fileName}" --include="*.js" -r .`,
+          findExports: `grep -n "export.*${fileName}\\|module.exports.*${fileName}" ${args.filePath}`,
+          findRelated: `find . -name "*${fileName}*" -type f | head -10`,
+          usage: "Use these commands to explore file relationships in the codebase"
+        }
+      };
+
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(relationships, null, 2),
+            text: JSON.stringify(enhancedRelationships, null, 2),
           },
         ],
       };
@@ -759,6 +840,93 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }]
           };
         }
+      }
+    }
+
+    case 'smart_grep': {
+      try {
+        const { query, maxFiles = 5, includeContext = true, projectRoot: queryRoot } = args;
+        const actualProjectRoot = queryRoot || projectRoot;
+        
+        // Import SmartGrep
+        const { SmartGrep } = await import('./smartGrep.js');
+        
+        // Initialize SmartGrep with existing analyzer and scanner
+        const smartGrep = new SmartGrep(analyzer, new ScopedFileScanner(actualProjectRoot));
+        
+        // Get grep strategy
+        const strategy = await smartGrep.getGrepStrategy(query, {
+          maxFiles,
+          includeContext,
+          projectRoot: actualProjectRoot
+        });
+        
+        // Format response
+        const response = {
+          success: true,
+          command: strategy.command,
+          explanation: `Generated grep command for: "${query}"`,
+          
+          // Primary search information
+          search: {
+            command: strategy.command,
+            description: strategy.strategy.approach,
+            intent: strategy.strategy.intent
+          },
+          
+          // Files to search with relevance
+          targetFiles: strategy.files.map(f => ({
+            path: f.path,
+            relevance: f.relevance,
+            reason: f.reason || 'Identified as relevant'
+          })),
+          
+          // Patterns being searched
+          patterns: {
+            primary: strategy.patterns.primary.slice(0, 3),
+            secondary: strategy.patterns.secondary.slice(0, 3),
+            explanation: strategy.patterns.explanation
+          },
+          
+          // Alternative approaches
+          alternatives: strategy.alternativeCommands.slice(0, 3),
+          
+          // Usage tips
+          tips: [
+            'Run the command directly in your terminal',
+            'Use the primary command for best results',
+            'Try alternatives if primary doesn\'t find what you need',
+            includeContext ? 'Context lines included for better understanding' : 'Add -C flag for context'
+          ],
+          
+          // Next steps
+          nextSteps: [
+            'Execute: ' + strategy.command,
+            'If too many results, try: ' + strategy.command + ' | head -20',
+            'For case-insensitive: ' + strategy.command.replace('grep', 'grep -i')
+          ]
+        };
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(response, null, 2)
+          }]
+        };
+        
+      } catch (error) {
+        logger.error('Smart grep error:', error);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Smart grep failed',
+              message: error.message,
+              fallback: `grep -r -n '${args.query}' .`,
+              tip: 'Use the fallback command for basic search'
+            }, null, 2)
+          }]
+        };
       }
     }
     
