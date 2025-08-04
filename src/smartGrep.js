@@ -12,8 +12,8 @@ const CONCEPT_PATTERNS = {
   },
   
   cart: {
-    primary: ['addToCart|removeFromCart|updateCart', 'cartItems|cartTotal|cart', 'quantity|checkout'],
-    secondary: ['price|total|subtotal', 'product.*cart|item.*cart', 'clearCart|emptyCart'],
+    primary: ['cart|Cart', 'addToCart|removeFromCart|updateCart', 'cartItems|cartTotal|getTotalPrice'],
+    secondary: ['price|total|subtotal', 'quantity|checkout', 'clearCart|emptyCart'],
     description: 'Shopping cart functionality patterns'
   },
   
@@ -51,6 +51,25 @@ const CONCEPT_PATTERNS = {
     primary: ['form|input|field', 'submit|validate|reset', 'onChange|onSubmit|handle'],
     secondary: ['value|checked|selected', 'validation|required|pattern', 'formData|formState'],
     description: 'Form handling and validation'
+  },
+  
+  // Additional common patterns for better coverage
+  user: {
+    primary: ['user|User', 'profile|account', 'username|email'],
+    secondary: ['settings|preferences', 'avatar|photo', 'role|permission'],
+    description: 'User-related patterns'
+  },
+  
+  product: {
+    primary: ['product|Product', 'item|Item', 'inventory|stock'],
+    secondary: ['price|cost', 'description|details', 'category|type'],
+    description: 'Product and inventory patterns'
+  },
+  
+  payment: {
+    primary: ['payment|Payment', 'checkout|charge', 'stripe|paypal'],
+    secondary: ['card|credit', 'billing|invoice', 'transaction|receipt'],
+    description: 'Payment processing patterns'
   }
 };
 
@@ -107,7 +126,23 @@ class SmartGrep {
     const intent = this.analyzeQueryIntent(query);
     
     // Get relevant files from smart-context
-    const relevantFiles = await this.contextAnalyzer.findRelevantFiles(query, maxFiles);
+    let relevantFiles = [];
+    try {
+      // Try to get files from context analyzer if available
+      if (this.contextAnalyzer && this.contextAnalyzer.findRelevantFiles) {
+        relevantFiles = await this.contextAnalyzer.findRelevantFiles(query, maxFiles);
+      } else if (this.fileScanner) {
+        // Fallback to file scanner
+        const allFiles = await this.fileScanner.scanCodebase();
+        relevantFiles = allFiles.slice(0, maxFiles).map(f => ({
+          path: f.path,
+          relevance: 0.5
+        }));
+      }
+    } catch (error) {
+      // If file discovery fails, continue with empty array
+      relevantFiles = [];
+    }
     
     // Generate search patterns based on concepts
     const patterns = this.generateSearchPatterns(query, intent.concepts);
@@ -155,12 +190,24 @@ class SmartGrep {
       taskType = 'review';
     }
 
-    // Identify concepts mentioned
+    // Identify concepts mentioned - improved detection
     const concepts = [];
+    const queryWords = lowerQuery.split(/\s+/);
+    
     for (const [concept, patterns] of Object.entries(CONCEPT_PATTERNS)) {
-      if (lowerQuery.includes(concept) || 
-          patterns.primary.some(p => lowerQuery.match(new RegExp(p.split('|')[0], 'i')))) {
+      // Check if concept name is in query
+      if (lowerQuery.includes(concept)) {
         concepts.push(concept);
+        continue;
+      }
+      
+      // Check if any primary pattern keyword matches
+      for (const pattern of patterns.primary) {
+        const keywords = pattern.toLowerCase().split('|');
+        if (keywords.some(keyword => queryWords.some(word => word.includes(keyword.replace(/\W/g, ''))))) {
+          concepts.push(concept);
+          break;
+        }
       }
     }
 
@@ -248,10 +295,16 @@ class SmartGrep {
     const alternatives = [];
 
     // Case-insensitive search
-    if (patterns.primary.length > 0) {
+    if (patterns.primary.length > 0 && files.length > 0) {
+      const fileList = files.slice(0, 3).map(f => f.path).join(' ');
       alternatives.push({
-        command: `grep -i -n '${patterns.primary[0]}' ${files.slice(0, 3).map(f => f.path).join(' ')}`,
+        command: `grep -i -n '${patterns.primary[0]}' ${fileList || '.'}`,
         description: 'Case-insensitive search in top files'
+      });
+    } else if (patterns.primary.length > 0) {
+      alternatives.push({
+        command: `grep -i -r -n '${patterns.primary[0]}' .`,
+        description: 'Case-insensitive search in all files'
       });
     }
 

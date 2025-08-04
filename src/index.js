@@ -432,19 +432,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Add grep commands to help users see actual code
       if (response.included && response.included.length > 0) {
-        // Extract keywords from the task
+        // Extract keywords from the task - improved extraction
+        const stopWords = ['the', 'how', 'what', 'where', 'when', 'why', 'does', 'work', 'find', 'show', 'for', 'and', 'with', 'this', 'that'];
         const keywords = args.task.toLowerCase()
           .split(/\s+/)
-          .filter(word => word.length > 3 && !['what', 'where', 'when', 'does', 'work', 'find', 'show'].includes(word))
-          .slice(0, 3);
+          .filter(word => word.length > 2 && !stopWords.includes(word))
+          .slice(0, 5);
         
-        const pattern = keywords.join('|');
+        // Also extract camelCase and snake_case identifiers
+        const codeTerms = args.task.match(/\b([a-z]+(?:[A-Z][a-z]+)*|[A-Z][a-z]+(?:[A-Z][a-z]+)*|[a-z]+(?:_[a-z]+)+)\b/g) || [];
+        
+        // Combine both and remove duplicates
+        const allKeywords = [...new Set([...codeTerms, ...keywords])].slice(0, 5);
+        const pattern = allKeywords.length > 0 ? allKeywords.join('|') : 'function|class|const|var';
         const topFiles = response.included.slice(0, 3).map(f => f.path).join(' ');
         
         response.grepCommands = {
           primary: `grep -n -C 3 '${pattern}' ${topFiles}`,
           focusedSearch: `grep -n '${pattern}' ${response.included[0]?.path || '.'}`,
-          broaderSearch: `grep -r -n '${keywords[0]}' --include="*.js" .`,
+          broaderSearch: `grep -r -n '${allKeywords[0] || keywords[0] || 'function'}' --include="*.js" .`,
           usage: "Run these commands to see actual code in the identified files"
         };
       }
