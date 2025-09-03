@@ -9,7 +9,9 @@
       "Bash(ls:*)",
       "mcp__sequential-thinking__sequentialthinking",
       "Bash(mkdir:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Read(/mnt/c/Users/crisn/GitHub/smart-context-demo/**)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

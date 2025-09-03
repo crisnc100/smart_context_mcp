@@ -22,6 +22,7 @@ const projectRoot = process.env.PROJECT_ROOT || process.cwd();
 let analyzer;
 let learning;
 let gitAnalyzer;
+let scopedFileScanner;
 
 // Create MCP server
 const server = new Server(
@@ -315,6 +316,44 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
         },
+      },
+      {
+        name: 'generate_context_package',
+        description: 'Generate a complete context package for AI to understand and solve problems. Transforms vague queries into structured context with code, relationships, and actionable insights.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'The problem or task description (can be vague)'
+            },
+            currentFile: {
+              type: 'string',
+              description: 'Path to the current file being edited (optional)'
+            },
+            taskMode: {
+              type: 'string',
+              enum: ['debugging', 'feature', 'refactoring', 'review', 'auto'],
+              description: 'Type of task (auto-detected if not specified)',
+              default: 'auto'
+            },
+            tokenBudget: {
+              type: 'number',
+              description: 'Maximum tokens for context package',
+              default: 8000
+            },
+            conversationId: {
+              type: 'string',
+              description: 'Conversation ID for context tracking'
+            },
+            projectRoot: {
+              type: 'string',
+              description: 'Root directory of the project',
+              default: projectRoot
+            }
+          },
+          required: ['query']
+        }
       },
     ],
   };
@@ -637,7 +676,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Enhance with grep commands to explore relationships
       const fileName = args.filePath.split('/').pop().replace(/\.(js|jsx|ts|tsx)$/, '');
       const enhancedRelationships = {
-        ...relationships,
+        relationships: relationships,
         grepCommands: {
           findImports: `grep -n "import.*${fileName}\\|require.*${fileName}" --include="*.js" -r .`,
           findUsage: `grep -n "\\b${fileName}\\b\\|<${fileName}" --include="*.js" -r .`,
@@ -702,7 +741,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Save database
       const dbData = db.export();
       const { writeFileSync } = await import('fs');
-      writeFileSync('./data/smart-context.db', Buffer.from(dbData));
+      writeFileSync('./data/context.db', Buffer.from(dbData));
       
       return {
         content: [
@@ -958,8 +997,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       );
       
       // Apply scope to file scanner
-      if (activate && fileScanner) {
-        fileScanner.setScope({
+      if (activate && scopedFileScanner) {
+        scopedFileScanner.setScope({
           includePaths,
           excludePaths,
           maxDepth
@@ -985,6 +1024,90 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
 
+    case 'generate_context_package': {
+      try {
+        const { 
+          query, 
+          currentFile = null, 
+          taskMode = 'auto',
+          tokenBudget = 8000,
+          conversationId = null,
+          projectRoot: queryRoot 
+        } = args;
+        
+        const actualProjectRoot = queryRoot || projectRoot;
+        
+        // Import ContextPackageGenerator
+        const { ContextPackageGenerator } = await import('./contextPackageGenerator.js');
+        
+        // Initialize the generator with project root and database
+        const generator = new ContextPackageGenerator(actualProjectRoot, db);
+        
+        // Detect or use specified task mode
+        const finalTaskMode = taskMode === 'auto' 
+          ? generator.detectTaskMode(query)
+          : taskMode;
+        
+        // Generate the context package
+        const contextPackage = await generator.generateContextPackage(query, {
+          tokenBudget,
+          taskMode: finalTaskMode,
+          currentFile,
+          conversationId
+        });
+        
+        // Format the response with structured data
+        const response = {
+          success: true,
+          package: contextPackage,
+          
+          // Usage instructions
+          usage: {
+            description: 'This context package provides everything needed to understand and solve the problem',
+            sections: {
+              summary: 'High-level interpretation of the query',
+              problem: 'Detailed problem analysis and likely location',
+              context: 'Relevant code and usage patterns',
+              relationships: 'File dependencies and impact analysis',
+              checklist: 'Things to check when solving',
+              suggestedFix: 'Potential fixes based on patterns'
+            }
+          },
+          
+          // Next steps for the user
+          nextSteps: [
+            'Review the problem interpretation',
+            'Check the core implementation code',
+            'Verify the suggested fixes',
+            'Use the checklist to validate solution'
+          ]
+        };
+        
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(response, null, 2)
+          }],
+          // Include structured package for programmatic access
+          package: contextPackage
+        };
+        
+      } catch (error) {
+        logger.error('Context package generation error:', error);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Context package generation failed',
+              message: error.message,
+              query: args.query,
+              tip: 'Try a more specific query or check if project is initialized'
+            }, null, 2)
+          }]
+        };
+      }
+    }
+
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -999,6 +1122,7 @@ async function main() {
   analyzer = new ContextAnalyzer(projectRoot);
   learning = new ContextLearning();
   gitAnalyzer = new GitAnalyzer(projectRoot);
+  scopedFileScanner = new ScopedFileScanner(projectRoot);
   
   const transport = new StdioServerTransport();
   await server.connect(transport);

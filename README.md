@@ -1,11 +1,48 @@
-# Smart Context MCP Server 🎯
+# Smart Context MCP Server 🎯 - AI Context Engineer
 
 [![Version](https://img.shields.io/npm/v/@crisnc100/smart-context-mcp)](https://www.npmjs.com/package/@crisnc100/smart-context-mcp)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-purple.svg)](https://modelcontextprotocol.io)
 
-An intelligent MCP server that learns from your coding patterns to automatically select the most relevant files for LLM context. **Stop wasting tokens on irrelevant files** - let Smart Context learn what matters for your specific tasks!
+**🚀 Version 2.0.0 - Major Update!** Smart Context has evolved from a file selector to a comprehensive **AI Context Engineer** that generates complete context packages for LLMs. Transform vague queries into structured, actionable context with code, relationships, and insights.
+
+## 🎯 What's New in v2.0.0
+
+### From File Selector to AI Context Engineer
+Smart Context now acts as your personal AI Context Engineer, solving a critical problem: **users often don't provide enough context for AI tools to work effectively**. Instead of just suggesting files, it now:
+
+- **Extracts actual code** from functions and relevant sections
+- **Maps relationships** between files through imports/exports
+- **Recognizes error patterns** and suggests fixes
+- **Generates structured packages** optimized for AI consumption
+- **Works alongside grep** to enhance, not replace, traditional search
+
+### New Tool: `generate_context_package`
+The flagship feature that transforms any query into a complete context package:
+```javascript
+// Before v2.0.0: Just file paths
+["src/cart.js", "src/checkout.js"]
+
+// After v2.0.0: Complete context with code
+{
+  "context": {
+    "coreImplementation": {
+      "code": "const getTotalPrice = () => { ... }",
+      "function": "getTotalPrice",
+      "lines": "48-56"
+    }
+  },
+  "relationships": {
+    "dependencies": [...],
+    "provides": [...]
+  },
+  "suggestedFix": {
+    "pattern": "NaN in calculation",
+    "suggestion": "Check if item.price is undefined"
+  }
+}
+```
 
 ## 🚀 Quick Start
 
@@ -121,6 +158,26 @@ See [CLAUDE_CODE_SETUP.md](./CLAUDE_CODE_SETUP.md) for detailed instructions.
 }
 ```
 
+### For Codex CLI (OpenAI)
+
+**IMPORTANT**: Codex CLI uses `mcp_servers` (underscore) rather than `mcpServers` (camelCase).
+
+#### For NPM Installation (TOML format):
+```toml
+[mcp_servers.smart-context]
+command = "npx"
+args = ["-y", "@crisnc100/smart-context-mcp"]
+env = { "PROJECT_ROOT" = "/path/to/your/project" }
+```
+
+#### For Local Installation (TOML format):
+```toml
+[mcp_servers.smart-context]
+command = "node"
+args = ["/path/to/smart_context_mcp/src/index.js"]
+env = { "PROJECT_ROOT" = "/path/to/your/project" }
+```
+
 **First Time Setup?** Run the setup wizard tool in Claude:
 ```
 Use the setup_wizard tool to check my Smart Context configuration
@@ -138,10 +195,71 @@ Configure Smart Context for your project. This is your first step!
 - `projectPath`: Where your code lives
 - `projectName`: A friendly name for your project
 
-### 🔍 `get_optimal_context` - **Main Tool**
-Get the most relevant files for any coding task.
+### 🚀 `generate_context_package` - **AI Context Engineer** (New in v2.0.0!)
+Generate a complete context package with code, relationships, and insights for any task.
 
-**What it does:** Analyzes your task and returns the best files to include in context.
+**What it does:** Acts as your AI Context Engineer - analyzes your query, extracts actual code, maps dependencies, and provides structured context that helps AI tools understand your codebase better.
+
+**Key parameters:**
+- `query` (required): Natural language description of your task
+- `currentFile`: The file you're working on (optional)
+- `tokenBudget`: Maximum tokens to use (default: 6000)
+
+**Returns:** A structured context package containing:
+- **Understanding**: What the AI understood from your query
+- **Context**: Actual code extracted from relevant sections
+- **Relationships**: Import/export dependencies and connections
+- **Suggested Fix**: Pattern-based fix suggestions for common issues
+- **Summary**: Task mode, confidence, and reasoning
+
+**Example - Debugging:**
+```javascript
+// Query: "getTotalPrice returns NaN when cart has items"
+{
+  "understanding": {
+    "problemDescription": "getTotalPrice function returns NaN",
+    "concepts": ["pricing", "cart", "calculation"],
+    "entities": ["getTotalPrice", "cart", "items"]
+  },
+  "context": {
+    "coreImplementation": {
+      "file": "src/context/CartContext.js",
+      "function": "getTotalPrice",
+      "lines": "48-56",
+      "code": "const getTotalPrice = () => {\n  return cartItems.reduce((total, item) => {\n    return total + (item.price * item.quantity);\n  }, 0).toFixed(2);\n};"
+    }
+  },
+  "suggestedFix": {
+    "pattern": "NaN in calculation",
+    "confidence": 0.8,
+    "suggestion": "Check if item.price or item.quantity are undefined/null"
+  }
+}
+```
+
+**Example - Feature Development:**
+```javascript
+// Query: "add discount code feature to shopping cart"
+{
+  "understanding": {
+    "taskType": "feature",
+    "components": ["discount", "cart", "validation"],
+    "relatedFeatures": ["pricing", "checkout"]
+  },
+  "relationships": {
+    "dependencies": [
+      {"file": "CartContext.js", "imports": ["useState", "useEffect"]},
+      {"file": "api/checkout.js", "exports": ["applyDiscount", "validateCode"]}
+    ],
+    "provides": ["CartProvider", "useCart", "getTotalPrice"]
+  }
+}
+```
+
+### 🔍 `get_optimal_context` - **File Selection Tool**
+Get the most relevant files for any coding task with grep commands.
+
+**What it does:** Analyzes your task and returns the best files to include in context, plus grep commands to search for specific patterns.
 
 **Key parameters:**
 - `task` (required): Describe what you're trying to do ("fix login bug", "add new feature")
@@ -208,7 +326,12 @@ Apply manual file selection adjustments for learning.
 // First time setup
 Use the setup_wizard tool with action="check"
 
-// Get context for a task
+// Generate complete context package (v2.0.0 - AI Context Engineer)
+Use generate_context_package with query="getTotalPrice returns NaN in cart"
+Use generate_context_package to understand "how does the authentication system work"
+Use generate_context_package for "add email notification when order ships"
+
+// Get relevant files with grep commands
 Use get_optimal_context to find files related to "fixing the user authentication flow"
 
 // Search for specific concepts
@@ -220,16 +343,22 @@ Use set_project_scope to only include src/** and exclude test files
 
 ## How It Works
 
-1. **Query Analysis**: The system analyzes your task description to understand intent, concepts, and entities
-2. **Multi-Factor Scoring**: Files are scored based on:
-   - Semantic similarity to the task
-   - Historical relevance from previous tasks
-   - Task mode specific patterns
-   - Import relationships
-   - Git co-change history
-   - Path similarity
-3. **Learning**: The system tracks which files were actually helpful and adjusts future recommendations
-4. **Transparency**: Every file selection includes reasoning and confidence scores
+### Version 2.0.0 - AI Context Engineer
+Smart Context has evolved from a file selector to a comprehensive **AI Context Engineer** that:
+
+1. **Understands Your Query**: Uses NLP to extract intent, concepts, entities, and error patterns
+2. **Extracts Real Code**: Finds and extracts actual functions and code sections, not just file paths
+3. **Maps Relationships**: Analyzes imports, exports, and dependencies between files
+4. **Suggests Fixes**: Recognizes common error patterns (NaN, null, undefined) and suggests solutions
+5. **Enforces Token Budgets**: Intelligently allocates tokens across different context sections
+6. **Learns From Usage**: Tracks which files and code sections actually helped solve problems
+
+### Core Process
+1. **Query Analysis**: Deep semantic understanding of your task
+2. **Multi-Factor Scoring**: Files scored on semantic similarity, git history, imports, and learned patterns
+3. **Code Extraction**: Pulls specific functions and relevant code sections
+4. **Relationship Mapping**: Builds dependency graph of your codebase
+5. **Context Generation**: Creates structured package optimized for AI consumption
 
 ## Task Modes
 

@@ -143,9 +143,19 @@ export async function initDatabase() {
 }
 
 function saveDatabase() {
+  // Allow disabling saves via environment variable
+  if (process.env.SMART_CONTEXT_DISABLE_SAVE === 'true') {
+    return;
+  }
+  
   if (db) {
-    const data = db.export();
-    writeFileSync(dbPath, Buffer.from(data));
+    try {
+      const data = db.export();
+      writeFileSync(dbPath, Buffer.from(data));
+    } catch (error) {
+      console.error('Failed to save database:', error.message);
+      // Don't throw - allow app to continue running
+    }
   }
 }
 

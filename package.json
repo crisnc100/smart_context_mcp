@@ -1,7 +1,7 @@
 {
   "name": "@crisnc100/smart-context-mcp",
-  "version": "1.1.1",
-  "description": "Intelligent MCP server for optimal file context selection in LLM coding tasks",
+  "version": "2.0.0",
+  "description": "AI Context Engineer: Intelligent MCP server that generates complete context packages for LLM coding tasks, with grep assistance and semantic understanding",
   "main": "src/index.js",
   "type": "module",
   "bin": {
@@ -22,7 +22,9 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "context-pruning",
+    "context-engineering",
+    "ai-context-package",
+    "grep-assistant",
     "llm",
     "ai",
     "code-analysis",
