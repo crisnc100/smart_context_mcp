@@ -5,6 +5,48 @@ All notable changes to Smart Context MCP Server will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-09-03
+
+### 🚀 Complete Transformation: AI Context Engineer
+
+This is a major rewrite that transforms Smart Context from a file selector to an AI Context Engineer that generates complete context packages for LLMs.
+
+### Added
+- **NEW TOOL: `generate_context_package`** - Complete context generation with code extraction
+- **ContextPackageGenerator** - 1100+ line engine that powers the AI Context Engineer
+- **Real Code Extraction** - Extracts actual functions and code sections, not just file paths
+- **Relationship Mapping** - Resolves imports to actual project files with full dependency graph
+- **Error Pattern Detection** - Recognizes NaN, null, undefined patterns and suggests fixes
+- **Git Co-change Analysis** - Shows files that commonly change together
+- **Token Budget Management** - Smart allocation across different context sections
+- **Structured Output** - JSON/object format optimized for AI consumption
+- **Session Tracking** - Unique session IDs for learning opportunities
+- **Fallback Context** - Handles vague queries gracefully
+- **Test File Discovery** - Enhanced detection across multiple patterns and directories
+- **Codex CLI Support** - TOML configuration format for OpenAI Codex
+
+### Changed
+- **Core Philosophy** - From "helping grep" to "engineering complete context"
+- **Output Format** - From file lists to structured context packages
+- **Relationship Extraction** - All paths normalized to absolute internally
+- **Import Resolution** - Imports now resolve to actual project files
+- **Token Efficiency** - Improved to 20-30% typical usage
+- **Database Integration** - Enhanced for co-change pattern storage
+
+### Fixed
+- Path normalization issues across all helper methods
+- Empty results when thresholds too high
+- Import/export extraction accuracy
+- Array spread bugs in relationships
+- Database filename mismatches
+- Token budget enforcement
+
+### Technical Details
+- Core implementation in `contextPackageGenerator.js`
+- Comprehensive end-to-end test suite
+- 100% test pass rate on demo project
+- Works alongside grep, doesn't replace it
+
 ## [1.0.1] - 2025-01-27
 
 ### Added

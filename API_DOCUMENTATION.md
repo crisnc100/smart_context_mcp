@@ -1,8 +1,8 @@
-# Smart Context MCP Server - API Documentation
+# Smart Context MCP Server v2.0.0 - API Documentation
 
 ## Overview
 
-The Smart Context MCP Server provides intelligent file context selection for LLMs during coding tasks. It uses semantic understanding, git history analysis, and machine learning to select the most relevant files for any given task.
+**Smart Context v2.0.0** is an AI Context Engineer that generates complete context packages for LLMs during coding tasks. It has evolved from a file selector to a comprehensive context generation system that extracts actual code, maps relationships, detects error patterns, and provides structured output optimized for AI consumption.
 
 ## Installation
 
@@ -45,6 +45,98 @@ Create a `.smart-context-config.json` in your project root:
 ```
 
 ## MCP Tools
+
+### generate_context_package (New in v2.0.0!)
+
+**Purpose:** Generate a complete context package with code, relationships, and insights for any coding task.
+
+**Description:** Acts as your AI Context Engineer - analyzes your query, extracts actual code, maps dependencies, and provides structured context that helps AI tools understand your codebase better.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| query | string | Yes | Natural language description of your task |
+| currentFile | string | No | The file you're currently working on |
+| tokenBudget | integer | No | Maximum tokens to use (default: 6000) |
+
+#### Returns
+
+A structured context package containing:
+
+```typescript
+{
+  summary: {
+    query: string,
+    taskMode: 'debugging' | 'feature' | 'refactoring' | 'review',
+    confidence: number,
+    timestamp: string,
+    primaryFiles: string[]
+  },
+  understanding: {
+    taskType: string,
+    problemDescription: string,
+    concepts: string[],
+    entities: string[],
+    errorType?: 'NaN' | 'null' | 'undefined',
+    hasError: boolean,
+    rationale: string
+  },
+  context: {
+    coreImplementation: {
+      file: string,
+      function?: string,
+      lines: string,
+      code: string
+    },
+    usage?: object,
+    dataFlow?: object,
+    dependencies: object[],
+    fallbackContext?: object
+  },
+  relationships: {
+    dependencies: Array<{file: string, imports: string[]}>,
+    provides: string[],
+    usedBy: string[],
+    commonlyChangedWith: Array<{file: string, frequency: number}>,
+    tests: string[]
+  },
+  suggestedFix?: {
+    pattern: string,
+    confidence: number,
+    suggestion: string
+  },
+  metadata: {
+    tokenBudget: number,
+    approxTokens: number,
+    sessionId: string,
+    relevantFiles: Array<{path: string, relevance: number, reason: string}>
+  }
+}
+```
+
+#### Example Usage
+
+```javascript
+// Debugging example
+{
+  "tool": "generate_context_package",
+  "arguments": {
+    "query": "getTotalPrice returns NaN when cart has items",
+    "currentFile": "src/context/CartContext.js",
+    "tokenBudget": 3000
+  }
+}
+
+// Feature development example
+{
+  "tool": "generate_context_package",
+  "arguments": {
+    "query": "add wishlist feature to save products for later",
+    "tokenBudget": 4000
+  }
+}
+```
 
 ### get_optimal_context
 
